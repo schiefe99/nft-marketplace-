@@ -1,0 +1,16 @@
+{
+  "ci": {
+    "collect": {
+      "url": ["http://localhost:4173/", "http://localhost:4173/nft/nft-001"],
+      "numberOfRuns": 3,
+      "startServerCommand": "npx vite preview --port 4173 --strictPort",
+      "startServerReadyPattern": "Local",
+      "settings": {
+        "preset": "desktop",
+        "chromeFlags": "--no-sandbox --headless=new",
+        "onlyCategories": ["performance", "accessibility", "best-practices", "seo"]
+      }
+    },
+    "upload": { "target": "filesystem", "outputDir": "./lighthouse/reports/desktop", "reportFilenamePattern": "%%PATHNAME%%-%%DATETIME%%.%%EXTENSION%%" }
+  }
+}

@@ -2,7 +2,7 @@
  * Servidor Socket.IO simulado com MSW (`ws.link`) + @mswjs/socket.io-binding.
  * O app usa o `socket.io-client` real; o MSW intercepta o WebSocket na página.
  *
- * Limitações do transporte simulado (documentadas no ARCHITECTURE.md):
+ * Limitações do transporte simulado (documentadas em docs/ARCHITECTURE.md):
  *  - apenas transporte `websocket` (sem long-polling);
  *  - namespace único `/`, sem rooms — o isolamento por usuário é feito aqui,
  *    filtrando conexões pelo token enviado na query do handshake;

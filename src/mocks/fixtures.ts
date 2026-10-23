@@ -58,6 +58,9 @@ function imageFor(i: number) {
   return `/nfts/${key}.webp`
 }
 
+/** NFTs com todas as edições esgotadas (filtro "Esgotados"); fora dos 8 do Figma, usados nos fluxos de compra. */
+const SOLD_OUT = new Set([11, 13, 26])
+
 function round4(v: number) {
   return (Math.round(v * 10000) / 10000).toFixed(4).replace(/0+$/, '').replace(/\.$/, '')
 }
@@ -74,7 +77,7 @@ export function buildNfts(count = 36): Nft[] {
     const basePrice = sample ? Number(sample[1]) : 0.05 + r() * r() * 3
     // 1/50 tem o preço "de vitrine"; demais edições derivam dele
     const editions: Edition[] = EDITION_DEFS.map((def, e) => {
-      const soldOut = (i % 9 === 0 && e === 2) || i % 13 === 0
+      const soldOut = (i % 9 === 0 && e === 2) || SOLD_OUT.has(i)
       const unavailable = (i === 3 && e === 0) || (i % 7 === 0 && e === 3)
       const random = Math.max(1, Math.min(def.supply, 1 + Math.floor(r() * Math.min(def.supply, 12))))
       // exemplos do Figma: estoque fixo e suficiente para os fluxos de demonstração/testes

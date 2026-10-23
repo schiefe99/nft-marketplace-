@@ -78,7 +78,7 @@ export interface DbState {
 }
 
 const STORAGE_KEY = 'nft-mock-db'
-const SCHEMA = 5
+const SCHEMA = 6
 
 let state: DbState
 
@@ -160,12 +160,35 @@ async function seedState(): Promise<DbState> {
 export function persist() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
-  } catch {
-    /* storage cheio ou bloqueado: segue só em memória */
+  } catch (err) {
+    // storage cheio ou bloqueado: segue só em memória (os dados somem ao recarregar)
+    console.warn('[mocks] Não foi possível salvar o banco simulado no localStorage.', err)
   }
 }
 
+/**
+ * Cada aba mantém o banco em memória e grava o estado inteiro. Sem sincronizar,
+ * uma aba aberta sobrescrevia (e apagava) o que outra gravou — ex.: uma conta
+ * recém-criada sumia quando a outra aba adicionava algo ao carrinho. O evento
+ * `storage` avisa esta aba de cada gravação das demais, e ela adota a versão nova.
+ */
+let syncing = false
+function syncAcrossTabs() {
+  if (syncing) return
+  syncing = true
+  window.addEventListener('storage', (e) => {
+    if (e.key !== STORAGE_KEY || !e.newValue) return
+    try {
+      const next = JSON.parse(e.newValue) as DbState
+      if (next.schema === SCHEMA) state = next
+    } catch {
+      /* ignora gravação corrompida */
+    }
+  })
+}
+
 export async function initDb() {
+  syncAcrossTabs()
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) {

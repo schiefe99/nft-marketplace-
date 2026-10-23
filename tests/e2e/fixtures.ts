@@ -36,7 +36,8 @@ export async function login(page: Page, user: keyof typeof USERS = 'ana', redire
   await dialog.getByLabel('E-mail').fill(USERS[user].email)
   await dialog.getByLabel('Senha', { exact: true }).fill(USERS[user].password)
   await dialog.getByRole('button', { name: 'Entrar' }).click()
-  await expect(page.getByRole('dialog')).toBeHidden()
+  // hash da senha + latência simulada passam de 5 s com vários navegadores em paralelo em máquinas lentas
+  await expect(page.getByRole('dialog')).toBeHidden({ timeout: 10_000 })
 }
 
 /** Adiciona um NFT ao carrinho pela página de detalhe. */

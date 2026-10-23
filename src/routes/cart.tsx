@@ -1,9 +1,9 @@
-import { Link, useNavigate, useRouter } from '@tanstack/react-router'
-import { AlertTriangle, ArrowLeft, Trash2 } from 'lucide-react'
+import { Link, useNavigate } from '@tanstack/react-router'
+import { AlertTriangle, Trash2 } from 'lucide-react'
 import { useMemo } from 'react'
 import { toast } from 'sonner'
 import { isApiError } from '@/api/client'
-import { Breadcrumb, container } from '@/components/layout'
+import { BackButton, Breadcrumb, container, itemRow, itemThumb } from '@/components/layout'
 import { NftCard, NftCardSkeleton } from '@/components/nft-card'
 import { QuantityStepper } from '@/components/quantity'
 import { EmptyState, ErrorState } from '@/components/states'
@@ -26,16 +26,16 @@ function CartRow({ item }: { item: CartItem }) {
     update.mutate({ itemId: item.id, quantity }, { onError: (err) => toast.error(isApiError(err) ? err.message : 'Não foi possível alterar a quantidade.') })
 
   return (
-    <li className="grid grid-cols-[70px_1fr_auto] items-center gap-x-4 gap-y-2 rounded-sm bg-surface md:grid-cols-[70px_1.5fr_0.9fr_0.9fr_0.9fr_40px]" data-testid="cart-row">
-      <img src={thumb(item.imageUrl)} alt="" width={70} height={70} className="row-span-3 size-[70px] object-cover md:row-span-1" />
-      <div className="min-w-0 py-2 md:py-0">
+    <li className={cn(itemRow, 'grid grid-cols-[80px_1fr_auto] bg-surface md:grid-cols-[70px_1.5fr_0.9fr_0.9fr_0.9fr_40px] md:gap-x-6 md:gap-y-2')} data-testid="cart-row">
+      <img src={thumb(item.imageUrl)} alt="" width={70} height={70} className={cn(itemThumb, 'row-span-2 size-20 md:row-span-1 md:size-[70px]')} />
+      <div className="min-w-0 self-end pt-2 md:self-auto md:pt-0">
         <p className="truncate font-bold">
           <Link to="/nft/$nftId" params={{ nftId: item.nftId }} className="hover:text-accent">{item.name}</Link>
         </p>
         <p className="text-sm text-muted">Edição: {item.editionName}</p>
         {unavailable && <p className="text-xs font-bold text-warning">{item.status === 'sold_out' ? 'Esgotado' : 'Indisponível'}</p>}
       </div>
-      <div className="col-start-2 md:col-start-auto">
+      <div className="col-start-2 self-start pb-2 md:col-start-auto md:self-auto md:pb-0">
         <p className="font-bold text-accent md:font-normal md:text-muted">
           <span className="sr-only">Preço unitário: </span>
           {formatEth(item.unitPriceEth)}
@@ -47,7 +47,7 @@ function CartRow({ item }: { item: CartItem }) {
           </p>
         )}
       </div>
-      <div className="col-start-3 row-start-1 row-span-2 self-center pr-3 md:col-start-auto md:row-start-auto md:row-span-1 md:pr-0">
+      <div className="col-start-3 row-start-1 self-end pr-3 md:col-start-auto md:row-start-auto md:self-auto md:pr-0">
         <QuantityStepper value={item.quantity} max={max} onChange={changeQty} label={`Quantidade de ${item.name}`} disabled={update.isPending || unavailable} />
       </div>
       <p className="hidden font-bold text-accent md:block">
@@ -58,7 +58,7 @@ function CartRow({ item }: { item: CartItem }) {
         type="button"
         onClick={() => remove.mutate({ itemId: item.id, name: item.name })}
         disabled={remove.isPending}
-        className="col-start-3 row-start-3 justify-self-end p-2 pr-3 text-muted hover:text-danger md:col-start-auto md:row-start-auto md:justify-self-center md:pr-2"
+        className="col-start-3 row-start-2 self-start justify-self-end p-1.5 pr-3 text-muted hover:text-danger md:col-start-auto md:row-start-auto md:self-auto md:justify-self-center md:p-2"
         aria-label={`Remover ${item.name} do carrinho`}
       >
         <Trash2 className="size-5" aria-hidden="true" />
@@ -71,7 +71,6 @@ export function CartPage() {
   const cart = useCart()
   const ack = useAcknowledgeCart()
   const navigate = useNavigate()
-  const router = useRouter()
   const { user } = useSession()
   const data = cart.data
   const hasBlocking = Boolean(data?.issues.some((i) => i.type !== 'price_changed'))
@@ -85,15 +84,14 @@ export function CartPage() {
 
   return (
     <div className={container}>
-      <div className="mt-4 flex items-center gap-3 md:hidden">
-        <button type="button" onClick={() => router.history.back()} className="grid size-9 place-items-center rounded-full bg-surface" aria-label="Voltar">
-          <ArrowLeft className="size-5" aria-hidden="true" />
-        </button>
+      {/* topo mobile: voltar + título centralizado (frame "Mobile / Carrinho de NFTs") */}
+      <div className="mt-4 flex items-center gap-3 md:mt-8">
+        <span className="md:hidden"><BackButton fallback="/" /></span>
+        <div className="hidden md:block">
+          <Breadcrumb items={[{ label: 'Início', to: '/' }, { label: 'Mercado', to: '/mercado' }, { label: 'Carrinho' }]} />
+        </div>
+        <h1 className="flex-1 pr-12 text-center text-lg font-bold md:sr-only">Carrinho de NFTs</h1>
       </div>
-      <div className="mt-8 hidden md:block">
-        <Breadcrumb items={[{ label: 'Início', to: '/' }, { label: 'Mercado', to: '/mercado' }, { label: 'Carrinho' }]} />
-      </div>
-      <h1 className="mt-2 text-center text-lg font-bold md:sr-only">Carrinho de NFTs</h1>
 
       {cart.isError && !data ? (
         <div className="mt-8"><ErrorState error={cart.error} onRetry={() => cart.refetch()} title="Não foi possível carregar o carrinho" /></div>
@@ -120,16 +118,16 @@ export function CartPage() {
                 )}
               </div>
             )}
-            <div className="hidden grid-cols-[70px_1.5fr_0.9fr_0.9fr_0.9fr_40px] gap-4 border-b border-border pb-3 text-[15px] font-bold md:grid">
+            <div className="hidden grid-cols-[70px_1.5fr_0.9fr_0.9fr_0.9fr_40px] gap-x-6 border-b border-border px-2 pb-3 text-[15px] font-bold md:grid">
               <span className="col-span-2">NFTs</span>
               <span>Preço</span>
               <span>Edições</span>
               <span>Total</span>
               <span className="sr-only">Ações</span>
             </div>
-            <ul className="mt-3 flex flex-col gap-3" aria-busy={cart.isFetching}>
+            <ul className="mt-4 flex flex-col gap-3" aria-busy={cart.isFetching}>
               {cart.isPending
-                ? Array.from({ length: 3 }, (_, i) => <li key={i}><Skeleton className="h-[70px] w-full rounded-sm" /></li>)
+                ? Array.from({ length: 3 }, (_, i) => <li key={i}><Skeleton className="h-[86px] w-full rounded-sm" /></li>)
                 : data?.items.map((item) => <CartRow key={item.id} item={item} />)}
             </ul>
           </section>

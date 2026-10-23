@@ -20,10 +20,13 @@ test.describe('Catálogo', () => {
     const filters = (page.viewportSize()?.width ?? 1440) < 1024 ? page.getByRole('dialog') : page.getByRole('complementary', { name: 'Filtros' })
     await filters.getByRole('button', { name: /^Arte digital/ }).click()
     await filters.getByRole('button', { name: /^Ethereum/ }).click()
+    // no celular a ordenação fica dentro do painel de filtros
+    const phone = (page.viewportSize()?.width ?? 1440) < 768
+    if (phone) await filters.getByLabel('Ordenar por:').selectOption('price-asc')
     if ((page.viewportSize()?.width ?? 1440) < 1024) await page.getByRole('button', { name: /Ver resultados/ }).click()
     await expect(page).toHaveURL(/category=.*digital-art/)
     await expect(page).toHaveURL(/network=ethereum/)
-    await page.getByLabel('Ordenar por:').selectOption('price-asc')
+    if (!phone) await page.getByLabel('Ordenar por:').selectOption('price-asc')
     await expect(page).toHaveURL(/sort=price-asc/)
 
     await expect(page.getByTestId('results-status')).not.toContainText('atualizando')

@@ -9,9 +9,8 @@ import type {
   Network,
   Nft,
   NftListParams,
-  NftSummary,
+  NftPage,
   Order,
-  Paginated,
   Quote,
   RegisterRequest,
   Session,
@@ -36,7 +35,7 @@ export const catalogApi = {
   meta: (signal?: AbortSignal) => data(api.get<CatalogMeta>('/catalog/meta', { signal })),
   list: (params: NftListParams, signal?: AbortSignal) =>
     data(
-      api.get<Paginated<NftSummary>>('/nfts', {
+      api.get<NftPage>('/nfts', {
         params,
         signal,
         // category[] → category=a&category=b

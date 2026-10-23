@@ -32,7 +32,7 @@ Não há backend: todas as chamadas `/api/*` e o Socket.IO são atendidos pelo M
 
 | Comando | Descrição |
 |---|---|
-| `npm run dev` / `npm run dev:mocks` | Desenvolvimento com mocks |
+| `npm run dev` / `npm run dev:mocks` | Desenvolvimento com mocks (ativos por padrão; para desligar, `VITE_ENABLE_MOCKS=false` no `.env`) |
 | `npm run build` | Verificação de tipos + build otimizado (`dist/`) — **inclui os mocks** (build de demonstração) |
 | `npm run preview` | Serve o build em http://localhost:4173 |
 | `npm run typecheck` | `tsc -b` |
@@ -67,6 +67,14 @@ Senhas são armazenadas apenas como hash SHA-256 com salt no “banco” simulad
 
 **Cupons:** `KURIO10` (10%), `GENESIS25` (25%), `EXPIRADO20` (expirado), qualquer outro → inválido.
 
+**NFTs esgotados:** `nft-011`, `nft-013` e `nft-026` têm todas as edições esgotadas — aparecem no filtro *Disponibilidade → Esgotados* e não permitem compra.
+
+## Catálogo e filtros
+
+- Todo o estado (busca, coleções, faixa de preço, rede, disponibilidade, aba, ordenação e página) fica na URL: sobrevive a refresh, link direto e voltar/avançar.
+- **Faixa de preço:** ao soltar o controle (mouse, toque ou setas do teclado) a lista já recarrega com a faixa escolhida; o botão *Aplicar* continua disponível.
+- **Contagens:** o número ao lado de cada coleção e rede considera os demais filtros ativos (a própria faceta é ignorada), então “Polygon (5)” mostra exatamente 5 resultados ao ser clicado.
+
 ---
 
 ## Cenários de mock
@@ -74,7 +82,7 @@ Senhas são armazenadas apenas como hash SHA-256 com salt no “banco” simulad
 Selecione de três formas (combináveis, separados por vírgula):
 
 1. **URL:** `/?scenario=slow` ou `/?scenario=fast,payment-declined` (fica salvo até o reset)
-2. **Painel “Mocks”** (botão no canto inferior esquerdo, presente também no deploy)
+2. **Painel “Mocks”** (botão no canto inferior esquerdo; aparece ao abrir qualquer página com `?mocks` na URL e fica ativo na aba)
 3. **Console / testes:** `window.__mocks.setScenario(['order-timeout'])`
 
 | Cenário | Efeito |
@@ -147,4 +155,4 @@ Cada teste usa um contexto novo (estado isolado), cenário `fast` e fixtures det
 
 Netlify/Cloudflare Pages: `public/_redirects` já contém o fallback SPA.
 
-Documentação técnica (contratos, eventos, sessão, carrinho, cache, reconciliação, limitações e desvios do Figma): **[ARCHITECTURE.md](./ARCHITECTURE.md)**. Resultados de performance: **[lighthouse/RESULTS.md](./lighthouse/RESULTS.md)**.
+Documentação técnica (contratos, eventos, sessão, carrinho, cache, reconciliação, limitações e desvios do Figma): **[docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)**. Resultados de performance: **[lighthouse/RESULTS.md](./lighthouse/RESULTS.md)**.

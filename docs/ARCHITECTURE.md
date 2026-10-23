@@ -49,7 +49,7 @@ Base `/api`. Autenticação por `Authorization: Bearer <token>`. Carrinho de vis
 | | `POST /auth/login` | `LoginRequest` → `Session` |
 | | `GET /auth/session` | → `Session` (401 se expirada) |
 | | `POST /auth/logout` | → `204` |
-| NFTs | `GET /nfts?tab&q&category[]&collection&network&minPrice&maxPrice&availability&sort&page&pageSize&ids[]` | → `Paginated<NftSummary>` |
+| NFTs | `GET /nfts?tab&q&category[]&collection&network&minPrice&maxPrice&availability&sort&page&pageSize&ids[]` | → `NftPage` (`Paginated<NftSummary>` + `facets` com contagens por coleção e rede) |
 | | `GET /nfts/:id` | → `Nft` (404) |
 | | `GET /catalog/meta` | → contagens por coleção/rede, faixa de preço, destaques |
 | Favoritos | `GET /me/favorites` · `PUT/DELETE /me/favorites/:nftId` | → `{ nftIds }` |
@@ -107,7 +107,7 @@ Toda mutação do banco simulado que afeta esses recursos (painel, `updateNft`, 
 ## Checkout e pedidos
 
 1. Cotação (`POST /checkout/quote`) por rede; refeita ao trocar rede, ao mudar o carrinho, a cada `nft.updated` relevante e após reconexão.
-2. *Confirmar compra* valida o formulário, simula a conexão com a carteira cadastrada (pode ser recusada) e abre a revisão. A revisão registra o `fingerprint` visto; se a cotação mudar, a confirmação é bloqueada até “Aceitar novo valor”. É possível desconectar/reconectar a carteira.
+2. *Confirmar compra* (um passo) valida o formulário, simula a conexão com a carteira cadastrada (pode ser recusada), recota e cria o pedido. Se a nova cotação diferir do `fingerprint` exibido na tela (ou um evento em tempo real alterar preço/disponibilidade), o pedido **não** é enviado: o novo total aparece e a confirmação fica bloqueada até “Aceitar novo valor”. A rede vem pré-selecionada pela carteira escolhida.
 3. `POST /orders` com `Idempotency-Key` derivada da tentativa (cotação + carteira + rede + comprador, guardada em `sessionStorage`). Falhas transitórias são reenviadas com a mesma chave (o servidor devolve o mesmo pedido); cliques repetidos são ignorados (`inFlight`). `QUOTE_STALE`/`AVAILABILITY_CONFLICT` trazem a nova cotação e exigem nova confirmação. O servidor também recusa um 2º pedido enquanto houver um pendente (`ORDER_PENDING`).
 4. `/pedido/:id` mostra pendente/confirmado/recusado (`order.updated` + polling de segurança de 4 s enquanto pendente). Refresh/reconexão recuperam o estado; confirmado e recusado são terminais. O recibo é o **snapshot** gravado no pedido — mudanças posteriores no catálogo não o alteram. Hash e link de explorador são simulados.
 
@@ -132,16 +132,16 @@ Skip link, `:focus-visible` com contraste, diálogos/drawers Radix (focus trap, 
 - **Assets:** as ilustrações foram recortadas do export do Figma (4 personagens). Para dar variedade ao catálogo de 36 itens, foram geradas variações de matiz dessas mesmas imagens (`public/nfts/*-b|c.webp`). As imagens de NFT são pequenas no Figma (≈250 px) e foram ampliadas para 480 px no detalhe.
 - **Tipografia/cores:** Roboto Mono e tokens extraídos das variáveis do Figma (`color/ink`, `surface-card`, `primary`…), servidos localmente. Sem ajustes de contraste necessários.
 - **Login/Cadastro:** como no Figma, são diálogos sobre a página inicial (desktop) e tela cheia no mobile. Login social e “Esqueceu a senha?” estão fora do escopo — exibem aviso e não simulam sucesso.
-- **Checkout:** o Figma pede vários campos de carteira no formulário. Como a compra deve usar **carteiras cadastradas**, endereço e ENS vêm da carteira selecionada (somente leitura); “Tipo de carteira”, “Nome do perfil” e “Nome ENS .eth” foram consolidados no card de carteira. Código de indicação e observação são opcionais. Foi adicionada uma etapa de **revisão** em diálogo (requisito).
+- **Checkout:** o Figma pede vários campos de carteira no formulário. Como a compra deve usar **carteiras cadastradas**, endereço e ENS vêm da carteira selecionada (somente leitura); “Tipo de carteira”, “Nome do perfil” e “Nome ENS .eth” foram consolidados no card de carteira. Código de indicação e observação são opcionais. A antiga etapa de **revisão em diálogo** foi removida para um fluxo mais direto: a própria tela de pagamento já exibe itens, carteira, rede e total, e mudanças de valor continuam exigindo aceite explícito. No mobile (frame “Mobile / Pagamento com carteira”) a tela prioriza carteira, rede e total; os dados do colecionador, já preenchidos pelo perfil, ficam recolhidos e abrem sozinhos se houver erro.
 - **Perfil:** o campo “Apelido da carteira” foi substituído por “Bio” (o apelido é editado em Carteiras).
 - **Carteiras:** “Código de indicação”, “E-mail” e “Nome do perfil” do frame não foram mantidos no formulário de carteira (duplicavam o perfil).
-- **Filtros:** coleções, faixa de preço (campos numéricos no lugar do slider, acessíveis por teclado), rede e um filtro extra de disponibilidade. Busca textual no topo do catálogo e no ícone de lupa.
+- **Filtros:** coleções (em ordem alfabética), faixa de preço (slider de dois controles, acessível por teclado, que aplica ao soltar e mantém o botão *Aplicar*), rede e um filtro extra de disponibilidade. As contagens de coleção e rede vêm da própria listagem (`facets` em `GET /nfts`) e consideram os demais filtros ativos. Busca textual no topo do catálogo e no ícone de lupa.
 - **Itens fora de escopo** (Criadores, Aprenda, blog, atividade, ofertas, downloads, suporte, newsletter): visíveis para fidelidade, marcados como indisponíveis (`aria-disabled`, “em breve”) sem aparentar sucesso.
 - **Confirmação:** renderizada como card (visual do modal do Figma) numa rota própria `/pedido/:id`, para suportar acesso direto e refresh.
 - **Moeda:** ponto como separador decimal, como no Figma (“26.846 ETH”).
 
 ## Limitações conhecidas
 
-- O “servidor” é o MSW na própria aba: dados são por navegador (persistidos em `localStorage`), e eventos só chegam a abas que compartilham o mesmo estado — não há sincronização entre abas.
+- O “servidor” é o MSW na própria aba: dados são por navegador (persistidos em `localStorage`). As abas sincronizam o banco pelo evento `storage` (uma aba adota o que a outra gravou, sem sobrescrever), mas os eventos de Socket.IO são emitidos só na aba que fez a alteração — as demais veem a mudança na próxima requisição.
 - Relógio controlado nos testes via cenários determinísticos (`pending-hold` + `settleOrder`, `expireSessions`) em vez de timers falsos, porque o MSW/Socket.IO dependem de timers reais.
 - Avaliações individuais do NFT e páginas editoriais não fazem parte da entrega.

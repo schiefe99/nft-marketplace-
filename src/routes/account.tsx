@@ -11,7 +11,7 @@ import { container } from '@/components/layout'
 import { ErrorState } from '@/components/states'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Input, NativeSelect, Textarea } from '@/components/ui/input'
+import { Input, InputWithSuffix, NativeSelect, Textarea } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { Network, UpsertWalletRequest, User as UserT, Wallet, WalletProvider, WalletRole } from '@/contracts'
 import { NETWORKS } from '@/contracts'
@@ -25,12 +25,14 @@ function AccountLayout({ children }: { children: React.ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   const logout = useLogout()
   const navigate = useNavigate()
-  const item = (active: boolean) => cn('flex items-center gap-3 border-l-[6px] border-transparent px-4 py-3 text-[15px] text-accent hover:bg-white/5', active && 'border-primary')
-  const soon = 'flex cursor-not-allowed items-center gap-3 border-l-[6px] border-transparent px-4 py-3 text-[15px] text-accent/70'
+  // mesmo padding em todos os itens, inclusive "Sair" (escala de 8px)
+  const row = 'flex w-full items-center gap-3 border-l-[6px] border-transparent px-5 py-4 text-[15px] text-accent'
+  const item = (active: boolean) => cn(row, 'hover:bg-white/5', active && 'border-primary')
+  const soon = cn(row, 'cursor-not-allowed text-accent/70')
   return (
     <div className={cn(container, 'mt-8 grid gap-8 md:grid-cols-[310px_1fr]')}>
-      <nav aria-label="Minha conta" className="h-fit rounded-sm bg-surface pt-5">
-        <h2 className="px-3 pb-2 text-lg font-bold">Meu perfil</h2>
+      <nav aria-label="Minha conta" className="h-fit rounded-sm bg-surface pt-6">
+        <h2 className="px-6 pb-4 text-lg font-bold">Meu perfil</h2>
         <ul>
           <li><Link to="/conta/perfil" className={item(pathname === '/conta/perfil')} aria-current={pathname === '/conta/perfil' ? 'page' : undefined}><User className="size-4" aria-hidden="true" />Dados do perfil</Link></li>
           <li><Link to="/conta/carteiras" className={item(pathname === '/conta/carteiras')} aria-current={pathname === '/conta/carteiras' ? 'page' : undefined}><MapPin className="size-4" aria-hidden="true" />Carteiras</Link></li>
@@ -47,10 +49,10 @@ function AccountLayout({ children }: { children: React.ReactNode }) {
             toast.success('Você saiu da sua conta.')
             void navigate({ to: '/' })
           }}
-          className="flex w-full items-center gap-3 border-t border-border px-4 py-3 text-[15px] font-bold text-accent hover:bg-white/5"
+          className={cn(row, 'border-t border-t-border font-bold hover:bg-white/5')}
           data-testid="logout"
         >
-          <LogOut className="size-5" aria-hidden="true" /> Sair
+          <LogOut className="size-4" aria-hidden="true" /> Sair
         </button>
       </nav>
       <div className="min-w-0">{children}</div>
@@ -149,12 +151,7 @@ function ProfileForm({ profile }: { profile: UserT }) {
           {(p) => <Input {...p} type="email" autoComplete="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />}
         </Field>
         <Field label="Nome ENS" error={errors.ensName} hint="Opcional. O sufixo .eth é adicionado automaticamente.">
-          {(p) => (
-            <div className="flex gap-2">
-              <span className="grid h-11 place-items-center rounded-md border border-border px-3 text-sm" aria-hidden="true">.eth</span>
-              <Input {...p} value={form.ens} onChange={(e) => setForm({ ...form, ens: e.target.value.toLowerCase() })} placeholder="seunome" />
-            </div>
-          )}
+          {(p) => <InputWithSuffix {...p} suffix=".eth" value={form.ens} onChange={(e) => setForm({ ...form, ens: e.target.value.toLowerCase() })} placeholder="seunome" />}
         </Field>
         <Field label="Bio" error={errors.bio}>
           {(p) => <Textarea {...p} value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} className="min-h-11" rows={2} />}
@@ -170,7 +167,7 @@ function ProfileForm({ profile }: { profile: UserT }) {
               </span>
             )}
             <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" id="avatar-file" onChange={(e) => onFile(e.target.files?.[0])} aria-describedby={errors.avatarUrl ? 'avatar-error' : undefined} />
-            <Button size="sm" className="h-10 px-6" onClick={() => fileRef.current?.click()}>Alterar</Button>
+            <Button size="sm" className="h-10 w-28 px-0 text-center" onClick={() => fileRef.current?.click()}>Alterar</Button>
             <Button size="sm" variant="ghost" onClick={() => setForm({ ...form, avatarUrl: null })} disabled={!form.avatarUrl}>Remover</Button>
           </div>
           {errors.avatarUrl && <p id="avatar-error" role="alert" className="text-sm text-danger">{errors.avatarUrl}</p>}
@@ -217,7 +214,7 @@ function PasswordForm() {
       <Field label="Confirmar nova senha" error={errors.confirm}>
         {(p) => <PasswordInput {...p} autoComplete="new-password" value={form.confirm} onChange={(e) => setForm({ ...form, confirm: e.target.value })} />}
       </Field>
-      <Button type="submit" size="sm" className="h-10 w-fit px-8" disabled={change.isPending}>{change.isPending ? 'Salvando…' : 'Salvar nova senha'}</Button>
+      <Button type="submit" size="md" className="w-full" disabled={change.isPending}>{change.isPending ? 'Salvando…' : 'Salvar nova senha'}</Button>
     </form>
   )
 }
@@ -346,12 +343,7 @@ function WalletEditor({ role, wallet, primary }: { role: WalletRole; wallet: Wal
               {(p) => <Input {...p} value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value.trim() })} placeholder="Endereço 0x da carteira" spellCheck={false} />}
             </Field>
             <Field label="Nome ENS (opcional)" error={errors.ensName}>
-              {(p) => (
-                <div className="flex gap-2">
-                  <span className="grid h-11 place-items-center rounded-md border border-border px-3 text-sm" aria-hidden="true">.eth</span>
-                  <Input {...p} value={form.ens} onChange={(e) => setForm({ ...form, ens: e.target.value.toLowerCase() })} placeholder="seunome" />
-                </div>
-              )}
+              {(p) => <InputWithSuffix {...p} suffix=".eth" value={form.ens} onChange={(e) => setForm({ ...form, ens: e.target.value.toLowerCase() })} placeholder="seunome" />}
             </Field>
           </div>
           <Button type="submit" size="sm" className="h-10 w-fit px-3" disabled={save.isPending}>{save.isPending ? 'Salvando…' : 'Salvar carteira'}</Button>

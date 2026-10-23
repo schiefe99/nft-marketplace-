@@ -1,10 +1,10 @@
-import { Link, useNavigate, useParams, useRouter, useRouterState } from '@tanstack/react-router'
-import { ArrowLeft, Heart, Mail, ShoppingCart, Star, ZoomIn } from 'lucide-react'
+import { Link, useNavigate, useParams, useRouterState } from '@tanstack/react-router'
+import { Heart, Mail, ShoppingCart, Star, ZoomIn } from 'lucide-react'
 import { Linkedin, Twitter } from '@/components/brand-icons'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { isApiError } from '@/api/client'
-import { Breadcrumb, container } from '@/components/layout'
+import { BackButton, Breadcrumb, container } from '@/components/layout'
 import { NftCard, NftCardSkeleton } from '@/components/nft-card'
 import { QuantityStepper } from '@/components/quantity'
 import { ErrorState } from '@/components/states'
@@ -95,7 +95,6 @@ export function NftDetailPage() {
 }
 
 function NftDetail({ nft }: { nft: Nft }) {
-  const router = useRouter()
   const navigate = useNavigate()
   const href = useRouterState({ select: (s) => s.location.href })
   const { user } = useSession()
@@ -123,7 +122,7 @@ function NftDetail({ nft }: { nft: Nft }) {
 
   const buy = async (goToCart: boolean) => {
     try {
-      await add.mutateAsync({ nftId: nft.id, editionId: edition.id, quantity: qty, name: `${nft.name} (${edition.name})` })
+      await add.mutateAsync({ nftId: nft.id, editionId: edition.id, quantity: qty, name: `${nft.name} (${edition.name})`, quiet: goToCart })
       setQty(1)
       if (goToCart) void navigate({ to: '/carrinho' })
     } catch (err) {
@@ -151,9 +150,7 @@ function NftDetail({ nft }: { nft: Nft }) {
       <p className="sr-only" role="status" aria-live="polite">{announce}</p>
       {/* topo mobile */}
       <div className="mt-4 flex items-center justify-between md:hidden">
-        <button type="button" onClick={() => router.history.back()} className="grid size-9 place-items-center rounded-full bg-surface" aria-label="Voltar">
-          <ArrowLeft className="size-5" aria-hidden="true" />
-        </button>
+        <BackButton fallback="/" />
         <button type="button" onClick={onFavorite} aria-pressed={isFav} className="grid size-9 place-items-center rounded-full bg-surface" aria-label={isFav ? 'Remover dos favoritos' : 'Favoritar'}>
           <Heart className={cn('size-5 text-accent', isFav && 'fill-primary')} aria-hidden="true" />
         </button>
@@ -181,7 +178,8 @@ function NftDetail({ nft }: { nft: Nft }) {
           </div>
         </div>
 
-        <section className="order-3 flex flex-col gap-4" aria-labelledby="nft-title">
+        {/* ritmo vertical fixo: 24px entre blocos, 8px entre título e conteúdo de cada bloco */}
+        <section className="order-3 flex flex-col gap-6" aria-labelledby="nft-title">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <h1 id="nft-title" className="text-xl font-bold md:text-[28px] md:leading-9">{nft.name}</h1>
             <span className="rounded-full border border-primary px-2 py-0.5 text-xs md:hidden">
@@ -189,7 +187,7 @@ function NftDetail({ nft }: { nft: Nft }) {
               {nft.rating.average} ({nft.rating.count})
             </span>
           </div>
-          <div className="hidden items-center justify-between border-b border-border pb-3 md:flex">
+          <div className="hidden items-center justify-between border-b border-border pb-4 md:flex">
             <p className="text-2xl font-bold text-accent" data-testid="detail-price">{formatEth(edition.priceEth)}</p>
             <p className="flex items-center gap-2 text-[15px]">
               <Stars value={nft.rating.average} />
@@ -245,7 +243,7 @@ function NftDetail({ nft }: { nft: Nft }) {
             </div>
           </div>
 
-          <dl className="flex flex-col gap-3 text-[15px] text-accent">
+          <dl className="flex flex-col gap-2 text-[15px] text-accent">
             <div><dt className="inline">ID do token: </dt><dd className="inline">{nft.tokenId}</dd></div>
             <div><dt className="inline">Coleção: </dt><dd className="inline">{nft.collection}</dd></div>
             <div><dt className="inline">Atributos: </dt><dd className="inline">{nft.attributes.join(', ')}</dd></div>
@@ -260,7 +258,7 @@ function NftDetail({ nft }: { nft: Nft }) {
       </div>
 
       {/* Barra de compra mobile (frame "Mobile / Detalhes do NFT") */}
-      <div className="fixed inset-x-0 bottom-[57px] z-30 border-t border-border bg-surface px-4 py-3 md:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-8px_24px_rgba(0,0,0,0.35)] md:hidden">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-sm">Qtd.</span>

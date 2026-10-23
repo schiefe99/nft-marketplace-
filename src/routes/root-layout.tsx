@@ -1,8 +1,10 @@
-import { Outlet, useNavigate, useRouter } from '@tanstack/react-router'
+import { Outlet, useNavigate, useRouter, useRouterState } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { lazy, Suspense, useEffect } from 'react'
 import { toast } from 'sonner'
 import { Footer, Header, MobileTabBar } from '@/components/layout'
+import { useMobileChrome } from '@/components/mobile-chrome'
+import { cn } from '@/lib/utils'
 import { Toaster } from '@/components/ui/sonner'
 import { clearPrivateCache, ensureSession } from '@/features/auth/session'
 import { sessionStore, useSession } from '@/lib/session-store'
@@ -68,19 +70,42 @@ function RealtimeNotifier() {
   return null
 }
 
+/** Feedback discreto de navegação: barra fina no topo enquanto a próxima rota carrega. */
+function RouteProgress() {
+  const loading = useRouterState({ select: (s) => s.status === 'pending' })
+  if (!loading) return null
+  return (
+    <div role="progressbar" aria-label="Carregando página" className="fixed inset-x-0 top-0 z-[60] h-0.5 overflow-hidden bg-primary/20">
+      <div className="route-progress h-full w-2/5 bg-primary" />
+    </div>
+  )
+}
+
+/** Painel de mocks é ferramenta de demonstração: aparece só com `?mocks` na URL (lembrado na aba). */
+function mockPanelEnabled() {
+  try {
+    if (new URLSearchParams(window.location.search).has('mocks')) sessionStorage.setItem('kurio-mocks-panel', '1')
+    return sessionStorage.getItem('kurio-mocks-panel') === '1'
+  } catch {
+    return false
+  }
+}
+
 export function RootLayout() {
+  const { tabs } = useMobileChrome()
   return (
     <>
+      <RouteProgress />
       <SessionEffects />
       <RealtimeNotifier />
       <Header />
-      <main id="conteudo" tabIndex={-1} className="outline-none">
+      <main id="conteudo" tabIndex={-1} className={cn('outline-none', tabs && 'max-md:pb-24')}>
         <Outlet />
       </main>
       <Footer />
       <MobileTabBar />
       <Toaster />
-      {window.__mocks && (
+      {window.__mocks && mockPanelEnabled() && (
         <Suspense fallback={null}>
           <MockPanel />
         </Suspense>

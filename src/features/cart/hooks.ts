@@ -34,10 +34,12 @@ function useCartMutation<TVars>(fn: (vars: TVars) => Promise<Cart>, opts: { succ
   })
 }
 
+/** `quiet`: compra direta — a navegação para o carrinho já é o feedback, sem toast. */
 export const useAddToCart = () =>
-  useCartMutation((vars: AddCartItemRequest & { name: string }) => cartApi.add(vars), {
-    success: (v) => `${v.quantity}× "${v.name}" adicionado ao carrinho.`,
-  })
+  useCartMutation(
+    ({ nftId, editionId, quantity }: AddCartItemRequest & { name: string; quiet?: boolean }) => cartApi.add({ nftId, editionId, quantity }),
+    { success: (v) => (v.quiet ? null : `${v.quantity}× "${v.name}" adicionado ao carrinho.`) },
+  )
 
 export const useUpdateCartItem = () => useCartMutation(({ itemId, quantity }: { itemId: string; quantity: number }) => cartApi.update(itemId, quantity))
 

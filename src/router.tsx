@@ -113,6 +113,8 @@ export function createAppRouter(queryClient: QueryClient) {
     defaultPreload: 'intent',
     defaultPreloadStaleTime: 0,
     scrollRestoration: true,
+    // troca de página com fade curto (View Transitions API; ignorado onde não há suporte)
+    defaultViewTransition: true,
     defaultNotFoundComponent: NotFoundPage,
   })
 }

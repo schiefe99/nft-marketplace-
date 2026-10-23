@@ -65,11 +65,11 @@ export function CouponForm({ coupon }: { coupon: AppliedCoupon | null }) {
 
   if (coupon) {
     return (
-      <div className="flex items-center justify-between rounded-sm border border-primary bg-primary/10 px-3 py-2 text-sm" data-testid="applied-coupon">
-        <span>
+      <div className="flex items-center justify-between gap-3 rounded-sm border border-primary bg-primary/10 px-3 py-2 text-sm" data-testid="applied-coupon">
+        <span className="leading-5">
           <strong>{coupon.code}</strong> — {coupon.description}
         </span>
-        <button type="button" onClick={() => remove.mutate()} disabled={remove.isPending} className="rounded-sm p-1 hover:bg-white/10" aria-label={`Remover cupom ${coupon.code}`}>
+        <button type="button" onClick={() => remove.mutate()} disabled={remove.isPending} className="grid size-7 shrink-0 place-items-center rounded-sm hover:bg-white/10" aria-label={`Remover cupom ${coupon.code}`}>
           <X className="size-4" aria-hidden="true" />
         </button>
       </div>

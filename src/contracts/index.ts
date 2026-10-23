@@ -188,6 +188,19 @@ export interface Paginated<T> {
   totalPages: number
 }
 
+/**
+ * Contagens por faceta considerando os demais filtros ativos (a própria faceta
+ * é ignorada): o número ao lado de "Polygon" é o que aparece ao clicar nele.
+ */
+export interface NftFacets {
+  categories: Partial<Record<Category, number>>
+  networks: Partial<Record<Network, number>>
+}
+
+export interface NftPage extends Paginated<NftSummary> {
+  facets: NftFacets
+}
+
 export interface CatalogMeta {
   collections: string[]
   categories: { value: Category; label: string; count: number }[]

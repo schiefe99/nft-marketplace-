@@ -8,11 +8,28 @@ import { Field, focusFirstInvalid, FormError } from '@/components/field'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { safeRedirect, useLogin, useRegister } from '@/features/auth/hooks'
+import { closeAuthTarget, safeRedirect, useLogin, useRegister } from '@/features/auth/hooks'
 import { HomePage } from './home'
 import { cn } from '@/lib/utils'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+/**
+ * O que a pessoa digitar vira um @usuário válido para a API (a–z, 0–9, _ e .):
+ * "Nicolas Martínez" → "nicolas.martinez". O texto original vira o nome de exibição.
+ */
+function toUsername(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '.')
+    .replace(/[^a-z0-9_.]/g, '')
+    .replace(/\.{2,}/g, '.')
+    .replace(/^\.+|\.+$/g, '')
+    .slice(0, 24)
+}
 
 export function PasswordInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
   const [show, setShow] = useState(false)
@@ -56,7 +73,7 @@ function SocialButtons() {
 function AuthShell({ mode, children, description }: { mode: 'login' | 'register'; children: React.ReactNode; description: string }) {
   const navigate = useNavigate()
   const search = useSearch({ strict: false }) as { redirect?: string }
-  const close = () => void navigate({ to: safeRedirect(search.redirect, '/') as '/' })
+  const close = () => void navigate({ to: closeAuthTarget(search.redirect) as '/' })
   const tab = 'text-[17px] md:text-xl'
   return (
     <>
@@ -154,10 +171,13 @@ export function RegisterPage() {
   const [formError, setFormError] = useState<string | null>(null)
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => setForm((f) => ({ ...f, [k]: e.target.value }))
 
+  const displayName = form.username.trim().replace(/\s+/g, ' ')
+  const username = toUsername(form.username)
+
   const submit = async (e: FormEvent) => {
     e.preventDefault()
     const next: Record<string, string> = {}
-    if (!/^[a-z0-9_.]{3,24}$/.test(form.username)) next.username = 'Use 3–24 caracteres: letras minúsculas, números, _ ou .'
+    if (displayName.length < 2 || username.length < 3) next.username = 'Informe um nome com pelo menos 3 letras ou números.'
     if (!EMAIL_RE.test(form.email.trim())) next.email = 'Informe um e-mail válido.'
     if (form.password.length < 8 || !/[A-Za-z]/.test(form.password) || !/\d/.test(form.password)) next.password = 'Mínimo de 8 caracteres, com letras e números.'
     if (form.confirm !== form.password) next.confirm = 'As senhas não conferem.'
@@ -165,7 +185,7 @@ export function RegisterPage() {
     setFormError(null)
     if (Object.keys(next).length) return focusFirstInvalid(formRef.current)
     try {
-      await register.mutateAsync({ name: form.username, username: form.username, email: form.email.trim(), password: form.password })
+      await register.mutateAsync({ name: displayName, username, email: form.email.trim(), password: form.password })
       toast.success('Conta criada! Bem-vindo(a) à Kurio.')
       void navigate({ to: safeRedirect(search.redirect) as '/', replace: true })
     } catch (err) {
@@ -181,7 +201,11 @@ export function RegisterPage() {
     <AuthShell mode="register" description="Crie seu perfil de colecionador e conecte uma carteira quando quiser.">
       <form ref={formRef} onSubmit={submit} noValidate className="flex flex-col gap-4" aria-label="Criar conta">
         <FormError message={formError} />
-        <Field label="Nome de usuário" error={errors.username ?? errors.name}>
+        <Field
+          label="Nome de usuário"
+          error={errors.username ?? errors.name}
+          hint={username.length >= 3 && username !== displayName ? `Seu @usuário será: ${username}` : undefined}
+        >
           {(p) => <Input {...p} autoComplete="username" placeholder="Nome de usuário" value={form.username} onChange={set('username')} />}
         </Field>
         <Field label="E-mail" error={errors.email}>

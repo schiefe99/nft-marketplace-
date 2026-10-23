@@ -1,4 +1,4 @@
-import { expect, login, open, test, USERS } from './fixtures'
+import { addToCart, expect, go, login, open, test, USERS } from './fixtures'
 
 test.describe('Conta e sessão', () => {
   test('cadastro com validação e conflito de e-mail @mobile', async ({ page }) => {
@@ -20,6 +20,48 @@ test.describe('Conta e sessão', () => {
     await page.goto('/conta/perfil')
     await page.reload()
     await expect(page.getByLabel('E-mail *')).toHaveValue('novo@nft.test')
+  })
+
+  test('cadastro com nome real persiste mesmo com outra aba gravando no banco', async ({ page }) => {
+    await open(page, '/')
+    // outra aba aberta antes do cadastro (tem o banco antigo em memória)
+    const other = await page.context().newPage()
+    await go(other, '/')
+
+    await go(page, '/cadastro')
+    const dialog = page.getByRole('dialog')
+    await dialog.getByLabel('Nome de usuário').fill('Nícolas Martínez')
+    await expect(dialog.getByText('Seu @usuário será: nicolas.martinez')).toBeVisible()
+    await dialog.getByLabel('E-mail').fill('nicolas@nft.test')
+    await dialog.getByLabel('Senha', { exact: true }).fill('Senha1234')
+    await dialog.getByLabel('Confirmar senha').fill('Senha1234')
+    await dialog.getByRole('button', { name: 'Criar conta' }).click()
+    await expect(page.getByRole('dialog')).toBeHidden()
+
+    // a outra aba grava no banco (carrinho) — não pode apagar a conta nova
+    await addToCart(other, 'nft-003')
+    const saved = await other.evaluate(() => JSON.parse(localStorage.getItem('nft-mock-db')!).users.find((u: { email: string }) => u.email === 'nicolas@nft.test'))
+    expect(saved).toMatchObject({ name: 'Nícolas Martínez', username: 'nicolas.martinez' })
+
+    // sai e entra de novo com a conta criada
+    await page.evaluate(() => localStorage.removeItem('nft-app-session'))
+    await go(page, '/login')
+    const login = page.getByRole('dialog')
+    await login.getByLabel('E-mail').fill('nicolas@nft.test')
+    await login.getByLabel('Senha', { exact: true }).fill('Senha1234')
+    await login.getByRole('button', { name: 'Entrar' }).click()
+    await expect(page.getByRole('dialog')).toBeHidden()
+  })
+
+  test('card de entrar fecha mesmo vindo de página privada', async ({ page }) => {
+    await open(page, '/pagamento')
+    await expect(page).toHaveURL(/\/login\?redirect=/)
+    await page.getByRole('dialog').getByRole('button', { name: 'Fechar' }).click()
+    await expect(page).toHaveURL(/\/carrinho$/)
+    await go(page, '/conta/perfil')
+    await page.getByRole('dialog').getByRole('button', { name: 'Fechar' }).click()
+    await expect(page.getByRole('dialog')).toBeHidden()
+    await expect(page).toHaveURL(/\/$/)
   })
 
   test('login inválido, retorno ao fluxo anterior e logout', async ({ page }) => {

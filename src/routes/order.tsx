@@ -1,9 +1,9 @@
-import { Link, useParams } from '@tanstack/react-router'
+import { Link, useNavigate, useParams } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { ExternalLink, Loader2, MailOpen, X, XCircle } from 'lucide-react'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { isApiError } from '@/api/client'
-import { container } from '@/components/layout'
+import { container, itemRow, itemThumb } from '@/components/layout'
 import { ErrorState } from '@/components/states'
 import { buttonVariants } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -15,14 +15,30 @@ import { cn, thumb } from '@/lib/utils'
 
 const PROVIDER: Record<Order['wallet']['provider'], string> = { metamask: 'MetaMask', walletconnect: 'WalletConnect', coinbase: 'Coinbase Wallet' }
 
+/** Recibo em modal sobre a página escurecida (frame "Confirmação de pedido"); Esc ou ✕ voltam ao início. */
 function Shell({ children, label }: { children: React.ReactNode; label: string }) {
+  const navigate = useNavigate()
+  const closeRef = useRef<HTMLAnchorElement>(null)
+  useEffect(() => {
+    closeRef.current?.focus({ preventScroll: true })
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && void navigate({ to: '/' })
+    document.addEventListener('keydown', onKey)
+    const overflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.body.style.overflow = overflow
+    }
+  }, [navigate])
   return (
-    <section aria-label={label} className="relative mx-auto mt-10 max-w-[578px] rounded-sm border-b-[10px] border-primary bg-surface md:mt-20" data-testid="order-card">
-      <Link to="/" className="absolute right-4 top-4 rounded-sm p-1 text-accent hover:bg-white/5" aria-label="Fechar e voltar ao início">
-        <X className="size-5" aria-hidden="true" />
-      </Link>
-      {children}
-    </section>
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 px-4 py-10 backdrop-blur-[2px] md:py-20">
+      <section role="dialog" aria-modal="true" aria-label={label} className="relative mx-auto max-w-[578px] rounded-sm border-b-[10px] border-primary bg-surface shadow-2xl" data-testid="order-card">
+        <Link ref={closeRef} to="/" className="absolute right-4 top-4 rounded-sm p-1 text-accent hover:bg-white/5" aria-label="Fechar e voltar ao início">
+          <X className="size-5" aria-hidden="true" />
+        </Link>
+        {children}
+      </section>
+    </div>
   )
 }
 
@@ -44,14 +60,15 @@ function Receipt({ order }: { order: Order }) {
       </dl>
       <div className="px-6 py-6 md:px-11">
         <h2 className="text-sm font-bold">Detalhes da transação</h2>
-        <div className="mt-2 grid grid-cols-[1fr_70px_100px] border-b border-border pb-2 text-sm font-bold">
+        {/* cabeçalho e linhas compartilham colunas e padding: textos alinham com "Edições" e "Subtotal" */}
+        <div className="mt-2 grid grid-cols-[1fr_70px_100px] gap-x-4 border-b border-border px-2 pb-2 text-sm font-bold">
           <span>NFTs</span><span className="text-center">Edições</span><span className="text-right">Subtotal</span>
         </div>
         <ul className="flex flex-col gap-3 py-3" data-testid="receipt-lines">
           {order.lines.map((l) => (
-            <li key={l.itemId} className="grid grid-cols-[1fr_70px_100px] items-center gap-2">
-              <span className="flex items-center gap-3 min-w-0">
-                <img src={thumb(l.imageUrl)} alt="" width={66} height={66} className="size-[66px] shrink-0 rounded-sm object-cover" />
+            <li key={l.itemId} className={cn(itemRow, 'grid grid-cols-[1fr_70px_100px] bg-surface-2')}>
+              <span className="flex min-w-0 items-center gap-4">
+                <img src={thumb(l.imageUrl)} alt="" width={66} height={66} className={cn(itemThumb, 'size-[66px]')} />
                 <span className="min-w-0">
                   <span className="block truncate font-bold">{l.name}</span>
                   <span className="block text-sm text-muted">Edição {l.editionName} · {formatEth(l.unitPriceEth)}</span>
@@ -72,14 +89,14 @@ function Receipt({ order }: { order: Order }) {
         <p className="mt-4 text-center text-sm leading-[22px] text-muted">
           Transação confirmada na {network}. A propriedade foi transferida para sua carteira conectada e registrada na rede.
         </p>
-        <div className="mt-5 flex justify-center">
+        <div className="mt-5 flex flex-wrap justify-center gap-3">
+          <Link to="/mercado" className={buttonVariants({ size: 'md', variant: 'outline' })}>Continuar explorando</Link>
           {order.explorerUrl && (
             <a href={order.explorerUrl} target="_blank" rel="noopener noreferrer" className={buttonVariants({ size: 'md' })} aria-label="Ver no explorador de blocos (link simulado, abre em nova aba)">
               Ver no Etherscan <ExternalLink className="size-4" aria-hidden="true" />
             </a>
           )}
         </div>
-        <p className="mt-3 text-center text-xs text-caption">Referência e link de exploração simulados.</p>
       </div>
     </Shell>
   )

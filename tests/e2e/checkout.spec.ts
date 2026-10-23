@@ -1,10 +1,9 @@
 import { addToCart, expect, login, open, setScenario, test } from './fixtures'
 
-async function goToReview(page: import('@playwright/test').Page) {
+/** Abre o pagamento; a rede já vem da carteira principal (Ethereum para a Ana). */
+async function goToCheckout(page: import('@playwright/test').Page) {
   await page.goto('/pagamento')
-  await page.getByLabel('Rede *').selectOption('ethereum')
-  await page.getByTestId('checkout-review').click()
-  await expect(page.getByRole('dialog', { name: 'Revise seu pedido' })).toBeVisible()
+  await expect(page.getByTestId('quote-lines')).toBeVisible()
 }
 
 test.describe('Compra', () => {
@@ -15,12 +14,10 @@ test.describe('Compra', () => {
     await expect(page.getByTestId('cart-row')).toHaveCount(1)
     await page.getByTestId('go-checkout').click()
     await expect(page).toHaveURL(/\/pagamento/)
-    await page.getByLabel('Rede *').selectOption('ethereum')
-    await page.getByTestId('checkout-review').click()
-    const dialog = page.getByRole('dialog', { name: 'Revise seu pedido' })
-    await expect(dialog.getByTestId('wallet-status')).toHaveText(/Conectada/)
-    const total = await dialog.getByTestId('summary-total').textContent()
-    await dialog.getByTestId('confirm-order').click()
+    // compra em um passo: rede pré-selecionada pela carteira principal
+    await expect(page.getByTestId('quote-lines')).toBeVisible()
+    const total = await page.getByTestId('summary-total').textContent()
+    await page.getByTestId('confirm-order').click()
     await expect(page).toHaveURL(/\/pedido\//)
     await expect(page.getByTestId('order-pending').or(page.getByTestId('order-confirmed'))).toBeVisible()
     await expect(page.getByTestId('order-confirmed')).toBeVisible({ timeout: 10_000 })
@@ -35,7 +32,7 @@ test.describe('Compra', () => {
     await open(page, '/', ['fast', 'payment-declined'])
     await login(page, 'ana')
     await addToCart(page, 'nft-002')
-    await goToReview(page)
+    await goToCheckout(page)
     await page.getByTestId('confirm-order').click()
     await expect(page.getByTestId('order-declined')).toBeVisible({ timeout: 10_000 })
     await page.getByRole('link', { name: 'Voltar ao carrinho' }).click()
@@ -46,7 +43,7 @@ test.describe('Compra', () => {
     await open(page, '/', ['fast', 'pending-hold'])
     await login(page, 'ana')
     await addToCart(page, 'nft-004')
-    await goToReview(page)
+    await goToCheckout(page)
     const btn = page.getByTestId('confirm-order')
     await btn.dblclick({ force: true })
     await btn.click({ force: true, timeout: 1000 }).catch(() => {})
@@ -59,7 +56,7 @@ test.describe('Compra', () => {
     await open(page, '/', ['fast', 'order-timeout'])
     await login(page, 'ana')
     await addToCart(page, 'nft-005')
-    await goToReview(page)
+    await goToCheckout(page)
     await page.getByTestId('confirm-order').click()
     await expect(page).toHaveURL(/\/pedido\//, { timeout: 15_000 })
     await expect(page.getByTestId('order-confirmed')).toBeVisible({ timeout: 10_000 })
@@ -70,21 +67,20 @@ test.describe('Compra', () => {
     expect(state).toEqual({ orders: 1, keys: 1 })
   })
 
-  test('alteração de preço via Socket.IO durante o checkout exige nova confirmação', async ({ page }) => {
+  test('alteração de preço via Socket.IO durante o checkout exige aceitar o novo valor', async ({ page }) => {
     await open(page, '/')
     await login(page, 'ana')
     await addToCart(page, 'nft-006')
-    await goToReview(page)
-    const dialog = page.getByRole('dialog', { name: 'Revise seu pedido' })
-    const before = await dialog.getByTestId('summary-total').textContent()
+    await goToCheckout(page)
+    const before = await page.getByTestId('summary-total').textContent()
     // evento emitido pelo servidor Socket.IO simulado (MSW) → socket.io-client
     await page.evaluate(() => window.__mocks!.updateNft('nft-006', { editionId: 'nft-006-ed-3', priceFactor: '1.2' }))
-    await expect(dialog.getByTestId('quote-changed')).toBeVisible()
-    await expect(dialog.getByTestId('confirm-order')).toBeDisabled()
-    await expect(dialog.getByTestId('summary-total')).not.toHaveText(before!)
-    await dialog.getByRole('button', { name: 'Aceitar novo valor' }).click()
-    await expect(dialog.getByTestId('confirm-order')).toBeEnabled()
-    await dialog.getByTestId('confirm-order').click()
+    await expect(page.getByTestId('quote-changed')).toBeVisible()
+    await expect(page.getByTestId('confirm-order')).toBeDisabled()
+    await expect(page.getByTestId('summary-total')).not.toHaveText(before!)
+    await page.getByRole('button', { name: 'Aceitar novo valor' }).click()
+    await expect(page.getByTestId('confirm-order')).toBeEnabled()
+    await page.getByTestId('confirm-order').click()
     await expect(page.getByTestId('order-confirmed')).toBeVisible({ timeout: 10_000 })
   })
 
@@ -92,12 +88,11 @@ test.describe('Compra', () => {
     await open(page, '/', ['fast', 'wallet-rejected'])
     await login(page, 'ana')
     await addToCart(page, 'nft-002')
-    await page.goto('/pagamento')
-    await page.getByLabel('Rede *').selectOption('ethereum')
-    await page.getByTestId('checkout-review').click()
+    await goToCheckout(page)
+    await page.getByTestId('confirm-order').click()
     await expect(page.getByRole('alert').filter({ hasText: 'recusou a conexão' })).toBeVisible()
     await setScenario(page, ['fast'])
-    await page.getByTestId('checkout-review').click()
-    await expect(page.getByRole('dialog', { name: 'Revise seu pedido' })).toBeVisible()
+    await page.getByTestId('confirm-order').click()
+    await expect(page).toHaveURL(/\/pedido\//)
   })
 })

@@ -23,8 +23,7 @@ test.describe('Tempo real', () => {
     await login(page, 'ana')
     await addToCart(page, 'nft-008')
     await page.goto('/pagamento')
-    await page.getByLabel('Rede *').selectOption('polygon')
-    await page.getByTestId('checkout-review').click()
+    await expect(page.getByTestId('quote-lines')).toBeVisible()
     await page.getByTestId('confirm-order').click()
     await expect(page.getByTestId('order-pending')).toBeVisible()
     const orderUrl = page.url()
@@ -39,7 +38,7 @@ test.describe('Tempo real', () => {
     await expect(page.getByTestId('order-pending')).toBeVisible()
     await page.goto('/pagamento')
     await expect(page.getByTestId('pending-order-banner')).toBeVisible()
-    await expect(page.getByTestId('checkout-review')).toBeDisabled()
+    await expect(page.getByTestId('confirm-order')).toBeDisabled()
 
     // liquidação chega via order.updated
     await go(page, orderUrl)

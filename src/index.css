@@ -71,7 +71,55 @@
   animation: var(--animate-shimmer);
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
+/* Troca de página: fade curto entre rotas (defaultViewTransition do roteador) */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 160ms;
+  animation-timing-function: ease-out;
+}
+
+/* Barra de progresso de navegação (topo) */
+@keyframes route-progress {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(250%); }
+}
+.route-progress {
+  animation: route-progress 900ms ease-in-out infinite;
+}
+
+/* Banner "Oferta limitada": brilho pulsante em volta e reflexo passando pela imagem */
+@keyframes offer-glow {
+  0%, 100% { box-shadow: 0 0 22px -6px rgba(232, 155, 85, 0.35), 0 12px 32px -12px rgba(0, 0, 0, 0.7); }
+  50% { box-shadow: 0 0 38px -4px rgba(232, 155, 85, 0.6), 0 12px 32px -12px rgba(0, 0, 0, 0.7); }
+}
+.offer-glow {
+  animation: offer-glow 2.8s ease-in-out infinite;
+}
+@keyframes offer-shine {
+  0%, 60% { transform: translateX(-120%) skewX(-20deg); }
+  100% { transform: translateX(220%) skewX(-20deg); }
+}
+.offer-shine::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: 45%;
+  background: linear-gradient(90deg, transparent, rgba(255, 236, 210, 0.28), transparent);
+  animation: offer-shine 4.5s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
   .skeleton {
     animation: none;
     background-image: none;

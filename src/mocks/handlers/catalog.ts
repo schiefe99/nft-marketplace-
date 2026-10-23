@@ -1,5 +1,5 @@
 import { http, HttpResponse } from 'msw'
-import type { CatalogMeta, Category, FavoritesResponse, Nft, NftSort, NftSummary, Paginated } from '@/contracts'
+import type { CatalogMeta, Category, FavoritesResponse, Nft, NftFacets, NftPage, NftSort, NftSummary } from '@/contracts'
 import { CATEGORIES, NETWORKS } from '@/contracts'
 import { compareEth, isValidEth } from '@/lib/money'
 import { db, findNft, persist } from '../db'
@@ -69,19 +69,30 @@ export const catalogHandlers = [
     if (!SORTS.includes(sort)) fields.sort = 'Ordenação inválida.'
     if (Object.keys(fields).length) throw fail(422, 'VALIDATION_ERROR', 'Parâmetros inválidos.', { fields })
 
-    let list = has('empty-catalog') ? [] : [...db().nfts]
+    // filtros nomeados: as facetas contam com todos os filtros, exceto o seu próprio
     const ids = p.getAll('ids')
-    if (ids.length) list = list.filter((n) => ids.includes(n.id))
-    if (tab === 'new') list = list.filter((n) => n.isNew)
-    if (tab === 'trending') list = list.filter((n) => n.isTrending)
-    if (q) list = list.filter((n) => `${n.name} ${n.collection} ${n.creator.name}`.toLowerCase().includes(q))
-    if (categories.length) list = list.filter((n) => categories.includes(n.category))
-    if (collection) list = list.filter((n) => n.collection === collection)
-    if (network) list = list.filter((n) => n.chain === network)
-    if (minPrice) list = list.filter((n) => compareEth(n.priceEth, minPrice) >= 0)
-    if (maxPrice) list = list.filter((n) => compareEth(n.priceEth, maxPrice) <= 0)
-    if (availability === 'available') list = list.filter((n) => n.totalAvailable > 0)
-    if (availability === 'sold_out') list = list.filter((n) => n.totalAvailable === 0)
+    const filters: [facet: string, keep: (n: Nft) => boolean][] = []
+    if (ids.length) filters.push(['ids', (n) => ids.includes(n.id)])
+    if (tab === 'new') filters.push(['tab', (n) => n.isNew])
+    if (tab === 'trending') filters.push(['tab', (n) => n.isTrending])
+    if (q) filters.push(['q', (n) => `${n.name} ${n.collection} ${n.creator.name}`.toLowerCase().includes(q)])
+    if (categories.length) filters.push(['category', (n) => categories.includes(n.category)])
+    if (collection) filters.push(['collection', (n) => n.collection === collection])
+    if (network) filters.push(['network', (n) => n.chain === network])
+    if (minPrice) filters.push(['price', (n) => compareEth(n.priceEth, minPrice) >= 0])
+    if (maxPrice) filters.push(['price', (n) => compareEth(n.priceEth, maxPrice) <= 0])
+    if (availability === 'available') filters.push(['availability', (n) => n.totalAvailable > 0])
+    if (availability === 'sold_out') filters.push(['availability', (n) => n.totalAvailable === 0])
+    const all = has('empty-catalog') ? [] : db().nfts
+    const except = (facet: string) => all.filter((n) => filters.every(([f, keep]) => f === facet || keep(n)))
+    const forCategories = except('category')
+    const forNetworks = except('network')
+    const facets: NftFacets = {
+      categories: Object.fromEntries(CATEGORIES.map((c) => [c.value, forCategories.filter((n) => n.category === c.value).length])),
+      networks: Object.fromEntries(NETWORKS.map((x) => [x.value, forNetworks.filter((n) => n.chain === x.value).length])),
+    }
+
+    const list = except('')
     list.sort((a, b) => {
       switch (sort) {
         case 'price-asc': return compareEth(a.priceEth, b.priceEth) || a.id.localeCompare(b.id)
@@ -93,7 +104,7 @@ export const catalogHandlers = [
     const total = list.length
     const totalPages = Math.max(1, Math.ceil(total / pageSize))
     const items = list.slice((page - 1) * pageSize, page * pageSize).map(toSummary)
-    return HttpResponse.json<Paginated<NftSummary>>({ items, page, pageSize, total, totalPages })
+    return HttpResponse.json<NftPage>({ items, page, pageSize, total, totalPages, facets })
   }, { kind: 'list' })),
 
   http.get('/api/nfts/:id', route(({ params }) => {

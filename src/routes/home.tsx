@@ -1,52 +1,87 @@
 import { Link } from '@tanstack/react-router'
 import { ArrowRight } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { container } from '@/components/layout'
 import { buttonVariants } from '@/components/ui/button'
 import { CatalogSection } from '@/features/catalog/catalog-section'
 import { useCatalogMeta } from '@/features/catalog/hooks'
 import { cn } from '@/lib/utils'
+import { useMediaQuery } from '@/lib/use-media'
 
 const HERO_FALLBACK = '/nfts/glasses-a.webp'
+const HERO_INTERVAL_MS = 1000
 
 function Hero() {
   const meta = useCatalogMeta()
   const featured = meta.data?.featured ?? []
   const [index, setIndex] = useState(0)
+  const [paused, setPaused] = useState(false)
+  const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)')
   // primeiro slide é estático (LCP previsível); demais vêm da API
   const slides = [{ id: 'nft-001', name: 'Emerald Ape #042', imageUrl: HERO_FALLBACK }, ...featured.filter((f) => f.id !== 'nft-001')].slice(0, 3)
   const current = slides[index] ?? slides[0]
 
+  // Troca automática a cada 1 s; pausa com mouse/foco no destaque e respeita "reduzir movimento"
+  const autoplay = slides.length > 1 && !paused && !reducedMotion
+  useEffect(() => {
+    if (!autoplay) return
+    const t = setInterval(() => setIndex((i) => (i + 1) % slides.length), HERO_INTERVAL_MS)
+    return () => clearInterval(t)
+  }, [autoplay, slides.length])
+
   return (
-    <section aria-labelledby="hero-title" className="relative mt-4 md:mt-8">
-      <div className="relative grid grid-cols-[1fr_auto] items-center gap-4 overflow-hidden rounded-md bg-surface/60 p-4 md:grid-cols-[1fr_450px] md:gap-10 md:bg-transparent md:p-0">
-        <div className="order-1 flex flex-col gap-3 md:gap-6 md:pl-10">
-          <p className="text-xs tracking-[0.1em] md:text-[15px]">Bem-vindo à Kurio</p>
-          <h1 id="hero-title" className="text-lg font-bold leading-snug tracking-[0.04em] md:text-[43px] md:leading-[70px]">
-            SEJA DONO DO FUTURO <br className="hidden md:block" />
-            DA ARTE DIGITAL
+    <section
+      aria-labelledby="hero-title"
+      aria-roledescription="carrossel"
+      className="relative mt-4 md:mt-8"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocus={() => setPaused(true)}
+      onBlur={(e) => !e.currentTarget.contains(e.relatedTarget) && setPaused(false)}
+    >
+      <div className="relative grid grid-cols-[1fr_auto] items-center gap-2.5 overflow-hidden rounded-[14px] bg-surface p-3.5 md:grid-cols-[1fr_450px] md:gap-10 md:rounded-none md:bg-transparent md:p-0">
+        {/* textos do frame "Mobile / Início" no celular e do frame "Início" no desktop */}
+        <div className="order-1 flex flex-col gap-2 md:gap-6 md:pl-10">
+          <p className="text-[10px] md:text-[15px] md:tracking-[0.1em]">Bem-vindo à Kurio</p>
+          <h1 id="hero-title" className="text-sm font-bold leading-5 tracking-[0.04em] md:text-[43px] md:leading-[70px]">
+            <span className="md:hidden">SEJA DONO DA CULTURA DIGITAL</span>
+            <span className="max-md:hidden">SEJA DONO DO FUTURO <br />DA ARTE DIGITAL</span>
           </h1>
-          <p className="max-w-[560px] text-xs leading-5 text-muted md:text-sm md:leading-6">
-            Descubra NFTs selecionados de criadores emergentes e consagrados. Colecione arte digital rara, apoie artistas e tenha uma parte da cultura da internet.
+          <p className="max-w-[560px] text-[11px] leading-4 text-muted md:text-sm md:leading-6">
+            <span className="md:hidden">Descubra NFTs selecionados de criadores do mundo todo.</span>
+            <span className="max-md:hidden">Descubra NFTs selecionados de criadores emergentes e consagrados. Colecione arte digital rara, apoie artistas e tenha uma parte da cultura da internet.</span>
           </p>
-          <a href="#catalogo" className={cn(buttonVariants({ size: 'md' }), 'w-fit px-7 text-[15px] tracking-[0.04em]')}>
-            EXPLORAR <ArrowRight className="md:hidden" aria-hidden="true" />
+          <a href="#catalogo" className="w-fit text-[11px] font-bold text-accent md:hidden">
+            EXPLORAR <ArrowRight className="inline size-3" aria-hidden="true" />
+          </a>
+          <a href="#catalogo" className={cn(buttonVariants({ size: 'md' }), 'w-fit self-center px-7 text-[15px] tracking-[0.04em] max-md:hidden')}>
+            EXPLORAR
           </a>
         </div>
         <div className="order-2 justify-self-end">
-          <Link to="/nft/$nftId" params={{ nftId: current.id }} aria-label={`Ver ${current.name}`} className="block">
-            <img
-              src={current.imageUrl}
-              alt={`Destaque: ${current.name}`}
-              width={450}
-              height={450}
-              fetchPriority="high"
-              className="aspect-square w-[120px] rounded-xl object-cover sm:w-[220px] md:w-[450px]"
-            />
+          {/* todas as imagens ficam empilhadas (já carregadas) e a atual aparece com fade */}
+          <Link to="/nft/$nftId" params={{ nftId: current.id }} aria-label={`Ver ${current.name}`} className="relative block">
+            {slides.map((s, i) => (
+              <img
+                key={s.id}
+                src={s.imageUrl}
+                alt={i === index ? `Destaque: ${s.name}` : ''}
+                aria-hidden={i !== index}
+                width={450}
+                height={450}
+                fetchPriority={i === 0 ? 'high' : 'low'}
+                className={cn(
+                  'aspect-square w-32 rounded-xl object-cover transition-opacity duration-300 sm:w-[220px] md:w-[450px] md:rounded-[24px]',
+                  i > 0 && 'absolute inset-0',
+                  i === index ? 'opacity-100' : 'opacity-0',
+                )}
+              />
+            ))}
           </Link>
         </div>
         {slides.length > 1 && (
-          <div className="order-3 col-span-2 flex justify-center gap-2 md:absolute md:bottom-10 md:left-[calc(50%-120px)]" role="group" aria-label="Destaques">
+          // fora da área da imagem: o fade entre slides nunca cobre o indicador
+          <div className="order-3 hidden justify-center gap-2 md:col-start-2 md:-mt-4 md:flex" role="group" aria-label="Destaques">
             {slides.map((s, i) => (
               <button
                 key={s.id}
@@ -71,14 +106,14 @@ const PROMOS = [
 
 function Promos() {
   return (
-    <section aria-label="Campanhas" className="mt-24 grid gap-7 md:grid-cols-2">
+    <section aria-label="Campanhas" className="mt-24 hidden gap-8 md:grid md:grid-cols-2">
       {PROMOS.map((p) => (
-        <article key={p.title} className="grid grid-cols-[minmax(0,287px)_1fr] overflow-hidden rounded-sm bg-surface">
-          <img src={p.image} alt="" width={287} height={250} loading="lazy" className="h-full max-h-[250px] w-full rounded-r-xl object-cover" />
-          <div className="flex flex-col items-end justify-center gap-4 p-4 text-right md:p-7">
-            <h2 className="text-base font-bold leading-6">{p.title}</h2>
-            <p className="text-[13px] leading-6 text-muted">{p.text}</p>
-            <Link to="/mercado" search={p.search} className={cn(buttonVariants({ size: 'sm' }), 'h-10 px-6 text-sm')} aria-label={`Explorar: ${p.title}`}>
+        <article key={p.title} className="grid grid-cols-[minmax(0,287px)_1fr] gap-4 overflow-hidden rounded-sm bg-surface p-4">
+          <img src={p.image} alt="" width={287} height={250} loading="lazy" className="h-full max-h-[250px] w-full rounded-md object-cover" />
+          <div className="flex flex-col items-end justify-center gap-4 p-4 text-right">
+            <h2 className="text-base font-bold leading-6 md:text-[17px]">{p.title}</h2>
+            <p className="text-[13px] leading-6 text-muted md:text-sm">{p.text}</p>
+            <Link to="/mercado" search={p.search} className={cn(buttonVariants({ size: 'sm' }), 'h-10 rounded-[4px] px-[26px] text-sm')} aria-label={`Explorar: ${p.title}`}>
               Explorar <ArrowRight className="size-4" aria-hidden="true" />
             </Link>
           </div>
@@ -97,7 +132,7 @@ const POSTS = [
 
 function Blog() {
   return (
-    <section aria-labelledby="blog-title" className="mt-24">
+    <section aria-labelledby="blog-title" className="mt-24 hidden md:block">
       <div className="text-center">
         <h2 id="blog-title" className="text-2xl font-bold md:text-[30px]">Diário da Cunhagem</h2>
         <p className="mt-3 text-sm text-muted">Histórias, guias e insights para colecionadores sobre o universo da propriedade digital.</p>
@@ -127,7 +162,7 @@ export function HomePage() {
   return (
     <div className={container}>
       <Hero />
-      <div className="mt-16 md:mt-24">
+      <div className="mt-5 md:mt-24">
         <CatalogSection />
       </div>
       <Promos />

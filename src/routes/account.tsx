@@ -27,7 +27,7 @@ function AccountLayout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate()
   // mesmo padding em todos os itens, inclusive "Sair" (escala de 8px)
   const row = 'flex w-full items-center gap-3 border-l-[6px] border-transparent px-5 py-4 text-[15px] text-accent'
-  const item = (active: boolean) => cn(row, 'hover:bg-white/5', active && 'border-primary')
+  const item = (active: boolean) => cn(row, 'hover:bg-foreground/5', active && 'border-primary')
   const soon = cn(row, 'cursor-not-allowed text-accent/70')
   return (
     <div className={cn(container, 'mt-8 grid gap-8 md:grid-cols-[310px_1fr]')}>
@@ -49,7 +49,7 @@ function AccountLayout({ children }: { children: React.ReactNode }) {
             toast.success('Você saiu da sua conta.')
             void navigate({ to: '/' })
           }}
-          className={cn(row, 'border-t border-t-border font-bold hover:bg-white/5')}
+          className={cn(row, 'border-t border-t-border font-bold hover:bg-foreground/5')}
           data-testid="logout"
         >
           <LogOut className="size-4" aria-hidden="true" /> Sair

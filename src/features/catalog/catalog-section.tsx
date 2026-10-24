@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/compone
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { NftCard, NftCardSkeleton } from '@/components/nft-card'
+import { ThemeToggle } from '@/components/theme-toggle'
 import { EmptyState, ErrorState } from '@/components/states'
 import type { CatalogMeta, CatalogTab, Category, NftFacets, NftSort } from '@/contracts'
 import { CATEGORIES } from '@/contracts'
@@ -152,7 +153,7 @@ function Filters({ meta, facets, idPrefix }: { meta?: CatalogMeta; facets?: NftF
                   type="button"
                   aria-pressed={active}
                   onClick={() => toggleCategory(c.value)}
-                  className={cn('flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-[15px] text-muted hover:bg-white/5 hover:text-foreground', active && 'bg-primary/10 font-bold text-accent')}
+                  className={cn('flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-[15px] text-muted hover:bg-foreground/5 hover:text-foreground', active && 'bg-primary/10 font-bold text-accent')}
                 >
                   <span>{c.label}</span>
                   <span className="tabular-nums">{count !== undefined ? `(${count})` : ''}</span>
@@ -175,7 +176,7 @@ function Filters({ meta, facets, idPrefix }: { meta?: CatalogMeta; facets?: NftF
                   type="button"
                   aria-pressed={active}
                   onClick={() => update({ network: active ? undefined : n.value })}
-                  className={cn('flex w-full items-center justify-between rounded-sm px-3 py-2 text-sm text-muted hover:bg-white/5 hover:text-foreground', active && 'bg-primary/10 font-bold text-accent')}
+                  className={cn('flex w-full items-center justify-between rounded-sm px-3 py-2 text-sm text-muted hover:bg-foreground/5 hover:text-foreground', active && 'bg-primary/10 font-bold text-accent')}
                 >
                   <span>{n.label}</span>
                   <span className="tabular-nums">({facets?.networks[n.value] ?? n.count})</span>
@@ -338,6 +339,7 @@ export function CatalogMobileBar() {
   return (
     <div className="flex gap-2 px-4 pt-5">
       <SearchField placeholder="Explorar coleções" className="flex-1" />
+      <ThemeToggle className="h-10 w-11 shrink-0 rounded-sm bg-surface" />
       <button
         type="button"
         onClick={() => window.dispatchEvent(new Event(OPEN_FILTERS_EVENT))}

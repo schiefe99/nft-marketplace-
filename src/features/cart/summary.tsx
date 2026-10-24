@@ -69,7 +69,7 @@ export function CouponForm({ coupon }: { coupon: AppliedCoupon | null }) {
         <span className="leading-5">
           <strong>{coupon.code}</strong> — {coupon.description}
         </span>
-        <button type="button" onClick={() => remove.mutate()} disabled={remove.isPending} className="grid size-7 shrink-0 place-items-center rounded-sm hover:bg-white/10" aria-label={`Remover cupom ${coupon.code}`}>
+        <button type="button" onClick={() => remove.mutate()} disabled={remove.isPending} className="grid size-7 shrink-0 place-items-center rounded-sm hover:bg-foreground/10" aria-label={`Remover cupom ${coupon.code}`}>
           <X className="size-4" aria-hidden="true" />
         </button>
       </div>

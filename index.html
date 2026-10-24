@@ -8,10 +8,23 @@
     <meta name="description" content="Kurio — marketplace de NFTs: descubra, colecione e compre arte digital de criadores emergentes e consagrados." />
     <title>Kurio — Marketplace de NFTs</title>
     <link rel="preload" href="/nfts/glasses-a.webp" as="image" type="image/webp" fetchpriority="high" />
+    <!-- Aplica o tema salvo antes da primeira pintura (sem "piscar" o tema errado) -->
+    <script>
+      try {
+        if (localStorage.getItem('kurio-theme') === 'light') {
+          document.documentElement.dataset.theme = 'light'
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#fbf6ef')
+        }
+      } catch (e) {}
+    </script>
+    <style>
+      .splash { min-height: 100dvh; display: grid; place-items: center; background: #140d0a; color: #f5f1eb; font: 700 22px/1 'Roboto Mono', ui-monospace, monospace; letter-spacing: .3em }
+      [data-theme='light'] .splash { background: #fbf6ef; color: #1f140f }
+    </style>
   </head>
   <body>
     <!-- Abertura exibida enquanto os mocks (MSW) iniciam; substituída pelo React na montagem -->
-    <div id="root"><div style="min-height:100dvh;display:grid;place-items:center;background:#140d0a;color:#f5f1eb;font:700 22px/1 'Roboto Mono',ui-monospace,monospace;letter-spacing:.3em" aria-busy="true">KURIO</div></div>
+    <div id="root"><div class="splash" aria-busy="true">KURIO</div></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

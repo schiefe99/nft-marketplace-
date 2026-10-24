@@ -28,19 +28,30 @@ export function NftCard({ nft, priority = false, compact = false }: { nft: NftSu
   }
 
   return (
-    <article className="group relative flex flex-col gap-1.5 md:gap-3" data-testid="nft-card" aria-labelledby={`nft-${nft.id}-name`}>
-      {/* fundo acompanha a imagem quadrada: mesmo padding nos quatro lados, em todas as telas */}
-      <div className="relative rounded-lg bg-surface p-2">
-        <img
-          src={nft.imageUrl}
-          alt={`Ilustração do NFT ${nft.name}`}
-          width={250}
-          height={250}
-          loading={priority ? 'eager' : 'lazy'}
-          fetchPriority={priority ? 'high' : 'auto'}
-          decoding="async"
-          className={cn('block aspect-square w-full rounded-md object-cover transition-transform duration-300 md:group-hover:scale-[1.02]', soldOut && 'opacity-60 grayscale-[40%]')}
-        />
+    <article
+      className="group relative flex flex-col gap-1.5 transition-transform duration-300 md:gap-3 md:hover:-translate-y-1.5"
+      data-testid="nft-card"
+      aria-labelledby={`nft-${nft.id}-name`}
+    >
+      {/* fundo acompanha a imagem quadrada; no hover o card sobe, ganha sombra e uma linha em gradiente cresce na base */}
+      <div
+        className={cn(
+          'relative overflow-hidden rounded-lg bg-surface p-2 transition-shadow duration-300 md:group-hover:shadow-[0_24px_48px_-24px_rgb(0_0_0/0.55)]',
+          'after:absolute after:inset-x-0 after:bottom-0 after:h-[3px] after:origin-left after:scale-x-0 after:bg-linear-to-r after:from-primary after:to-accent after:transition-transform after:duration-300 md:group-hover:after:scale-x-100',
+        )}
+      >
+        <div className="overflow-hidden rounded-md">
+          <img
+            src={nft.imageUrl}
+            alt={`Ilustração do NFT ${nft.name}`}
+            width={250}
+            height={250}
+            loading={priority ? 'eager' : 'lazy'}
+            fetchPriority={priority ? 'high' : 'auto'}
+            decoding="async"
+            className={cn('block aspect-square w-full object-cover transition-transform duration-500 ease-out md:group-hover:scale-[1.07]', soldOut && 'opacity-60 grayscale-[40%]')}
+          />
+        </div>
         {rarity && (
           <span className="absolute left-0 top-4 bg-primary px-2 py-0.5 text-[10px] font-bold text-primary-foreground md:px-3 md:text-sm">{rarity}</span>
         )}
@@ -65,7 +76,7 @@ export function NftCard({ nft, priority = false, compact = false }: { nft: NftSu
               className="grid size-9 place-items-center rounded-sm bg-surface text-foreground hover:text-accent"
               data-testid="favorite-toggle"
             >
-              <Heart className={cn('size-5', isFav && 'fill-primary text-primary')} aria-hidden="true" />
+              <Heart key={String(isFav)} className={cn('size-5', isFav && 'animate-pop fill-primary text-primary')} aria-hidden="true" />
             </button>
             <Link
               to="/nft/$nftId"

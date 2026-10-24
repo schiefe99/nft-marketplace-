@@ -1,7 +1,8 @@
 import { Link, useNavigate, useRouter, useRouterState } from '@tanstack/react-router'
 import { ArrowLeft, Heart, Home, LogIn, ScanLine, Search, ShoppingCart, User as UserIcon, WifiOff } from 'lucide-react'
 import { Facebook, Instagram, Linkedin, Twitter, Youtube } from './brand-icons'
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
+import { ThemeToggle } from './theme-toggle'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
@@ -50,13 +51,14 @@ function CartLink({ className, iconClass }: { className?: string; iconClass?: st
   return (
     <Link
       to="/carrinho"
-      className={cn('relative inline-flex size-10 items-center justify-center rounded-md hover:bg-white/5', className)}
+      className={cn('relative inline-flex size-10 items-center justify-center rounded-md hover:bg-foreground/5', className)}
       aria-label={`Carrinho, ${count} ${count === 1 ? 'item' : 'itens'}`}
       data-testid="cart-link"
     >
       <ShoppingCart className={cn('size-6', iconClass)} aria-hidden="true" />
       {count > 0 && (
-        <span aria-hidden="true" data-testid="cart-count" className="absolute right-0 top-0 grid min-w-4 place-items-center rounded-full bg-primary px-1 text-[9px] font-bold leading-4 text-primary-foreground">
+        // key muda a cada item: o selo "pula" quando algo entra no carrinho
+        <span key={count} aria-hidden="true" data-testid="cart-count" className="absolute right-0 top-0 grid min-w-4 animate-pop place-items-center rounded-full bg-primary px-1 text-[9px] font-bold leading-4 text-primary-foreground">
           {count}
         </span>
       )}
@@ -101,18 +103,40 @@ function SearchDialog({ children }: { children: React.ReactNode }) {
 }
 
 
+function useScrolled(offset = 24) {
+  const [scrolled, setScrolled] = useState(false)
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > offset)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [offset])
+  return scrolled
+}
+
 export function Header() {
   const { user } = useSession()
   const isMobile = useIsMobile()
   const { search } = useMobileChrome()
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   const marketActive = pathname.startsWith('/mercado') || pathname.startsWith('/nft') || pathname.startsWith('/carrinho') || pathname.startsWith('/pagamento')
-  // item ocupa a altura toda do header: o sublinhado ativo encosta na borda inferior (frame "Header")
+  const scrolled = useScrolled()
+  // item ocupa a altura toda do header; no hover um sublinhado cresce da esquerda até a borda inferior
   const navCls = (active: boolean) =>
-    cn('flex items-center border-b-[3px] border-transparent px-1 hover:text-accent', active && 'border-primary font-bold text-accent')
+    cn(
+      'relative flex items-center border-b-[3px] border-transparent px-1 transition-colors hover:text-accent',
+      'after:absolute after:inset-x-0 after:-bottom-[3px] after:h-[3px] after:origin-left after:scale-x-0 after:bg-primary after:transition-transform after:duration-300 hover:after:scale-x-100',
+      active && 'border-primary font-bold text-accent',
+    )
 
   return (
-    <header className="bg-background">
+    // vidro fosco depois que a página rola
+    <header
+      className={cn(
+        'sticky top-0 z-40 transition-[background-color,box-shadow] duration-300',
+        scrolled ? 'bg-background/80 shadow-[0_12px_30px_-20px_rgb(0_0_0/0.6)] backdrop-blur-md' : 'bg-background',
+      )}
+    >
       <a href="#conteudo" className="sr-only focus:not-sr-only focus:absolute left-4 top-2 z-50 rounded-md bg-primary px-4 py-2 font-bold text-primary-foreground">
         Pular para o conteúdo
       </a>
@@ -126,8 +150,9 @@ export function Header() {
             <SoonLink label="Aprenda" />
           </nav>
           <div className="flex items-center gap-4">
+            <ThemeToggle />
             <SearchDialog>
-              <button type="button" className="inline-flex size-10 items-center justify-center rounded-md hover:bg-white/5" aria-label="Buscar">
+              <button type="button" className="inline-flex size-10 items-center justify-center rounded-md hover:bg-foreground/5" aria-label="Buscar">
                 <Search className="size-6" aria-hidden="true" />
               </button>
             </SearchDialog>

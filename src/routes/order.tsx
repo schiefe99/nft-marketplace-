@@ -33,7 +33,7 @@ function Shell({ children, label }: { children: React.ReactNode; label: string }
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 px-4 py-10 backdrop-blur-[2px] md:py-20">
       <section role="dialog" aria-modal="true" aria-label={label} className="relative mx-auto max-w-[578px] rounded-sm border-b-[10px] border-primary bg-surface shadow-2xl" data-testid="order-card">
-        <Link ref={closeRef} to="/" className="absolute right-4 top-4 rounded-sm p-1 text-accent hover:bg-white/5" aria-label="Fechar e voltar ao início">
+        <Link ref={closeRef} to="/" className="absolute right-4 top-4 rounded-sm p-1 text-accent hover:bg-foreground/5" aria-label="Fechar e voltar ao início">
           <X className="size-5" aria-hidden="true" />
         </Link>
         {children}

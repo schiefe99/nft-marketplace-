@@ -76,7 +76,7 @@ function RouteProgress() {
   if (!loading) return null
   return (
     <div role="progressbar" aria-label="Carregando página" className="fixed inset-x-0 top-0 z-[60] h-0.5 overflow-hidden bg-primary/20">
-      <div className="route-progress h-full w-2/5 bg-primary" />
+      <div className="h-full animate-route-progress w-2/5 bg-primary" />
     </div>
   )
 }

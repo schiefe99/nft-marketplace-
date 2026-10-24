@@ -113,7 +113,7 @@ export function Header() {
 
   return (
     <header className="bg-background">
-      <a href="#conteudo" className="sr-only-focusable absolute left-4 top-2 z-50 rounded-md bg-primary px-4 py-2 font-bold text-primary-foreground">
+      <a href="#conteudo" className="sr-only focus:not-sr-only focus:absolute left-4 top-2 z-50 rounded-md bg-primary px-4 py-2 font-bold text-primary-foreground">
         Pular para o conteúdo
       </a>
       <div className={cn(container, 'hidden pt-6 md:block')}>

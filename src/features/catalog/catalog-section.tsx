@@ -225,7 +225,7 @@ function FeaturedBanner({ meta }: { meta?: CatalogMeta }) {
   const [h, m, s] = useOfferCountdown()
   return (
     // borda em gradiente + brilho pulsante: destaca a oferta sem competir com o catálogo
-    <section aria-labelledby="featured-title" className="offer-glow relative rounded-md bg-gradient-to-br from-primary via-border-soft to-primary p-px">
+    <section aria-labelledby="featured-title" className="relative animate-offer-glow rounded-md bg-gradient-to-br from-primary via-border-soft to-primary p-px">
       <div className="relative overflow-hidden rounded-[9px] bg-gradient-to-b from-surface-2 to-surface px-4 pb-4 pt-5">
         <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-16 size-48 rounded-full bg-primary/25 blur-3xl" />
         <div className="relative flex items-start justify-between gap-3">
@@ -251,7 +251,10 @@ function FeaturedBanner({ meta }: { meta?: CatalogMeta }) {
         {nft ? (
           <Link to="/nft/$nftId" params={{ nftId: nft.id }} className="group/offer relative mt-4 block overflow-hidden rounded-[14px] shadow-[0_18px_40px_-12px_rgba(0,0,0,0.8)]" aria-label={`Ver ${nft.name} em destaque`}>
             <img src={nft.imageUrl} alt={`NFT em destaque: ${nft.name}`} width={310} height={365} loading="lazy" className="aspect-[310/365] w-full object-cover transition-transform duration-500 group-hover/offer:scale-105" />
-            <span aria-hidden="true" className="offer-shine pointer-events-none absolute inset-0" />
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 before:absolute before:inset-y-0 before:left-0 before:w-[45%] before:animate-offer-shine before:bg-linear-to-r before:from-transparent before:via-[rgba(255,236,210,0.28)] before:to-transparent"
+            />
             <span className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 bg-gradient-to-t from-black/85 via-black/40 to-transparent px-3 pb-3 pt-10">
               <span className="min-w-0">
                 <span className="block truncate text-sm font-bold">{nft.name}</span>

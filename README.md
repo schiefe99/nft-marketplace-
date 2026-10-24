@@ -3,6 +3,10 @@
 Implementação do desafio front-end **Marketplace de NFTs** a partir do Figma *“Marketplace de NFTs GreenMint”* (marca **Kurio**).
 Fluxos de descoberta, compra e conta do colecionador, desktop e mobile, com APIs, autenticação, carteiras, pagamentos e tempo real **simulados na camada de rede (MSW)**.
 
+**🔗 Aplicação publicada:** https://nft-marketplace-eight-orcin.vercel.app
+
+**📦 Repositório:** https://github.com/schiefe99/nft-marketplace-
+
 | Responsabilidade | Tecnologia |
 |---|---|
 | Interface / Linguagem | React 19 + TypeScript (strict) |
@@ -148,6 +152,10 @@ Cada teste usa um contexto novo (estado isolado), cenário `fast` e fixtures det
 ---
 
 ## Deploy (Vercel)
+
+Publicado em **https://nft-marketplace-eight-orcin.vercel.app** (branch `main`, deploy automático a cada push).
+
+Para publicar uma cópia:
 
 1. Suba o repositório no GitHub.
 2. Em vercel.com → *Add New Project* → importe o repositório (framework Vite detectado).
